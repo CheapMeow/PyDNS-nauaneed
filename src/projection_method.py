@@ -21,6 +21,9 @@ def step1(u, v, nx, ny, nu, x, y, xx, yy, dx, dy, dt, epsilon, F, R, theta, r, u
     ustar = u + dt * uRHS + F * dt + ibm_forcing_u * dt
     vstar = v + dt * vRHS + ibm_forcing_v * dt
 
+    # my inlet velocity
+    ustar[0, :] = 1
+
     if bc['y']=='no-slip':
         ustar[0, :] = 0
         ustar[-1, :] = 0

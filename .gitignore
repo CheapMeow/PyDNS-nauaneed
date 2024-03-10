@@ -7,3 +7,6 @@ src/__pycache__
 # tecplot library
 tecio/*.so
 tecio/__pycache__
+
+data/
+.idea/

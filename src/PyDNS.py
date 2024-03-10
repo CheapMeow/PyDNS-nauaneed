@@ -1,31 +1,39 @@
 def PyDNS():
+    import os
+    print(os.getcwd())
+
+    import sys
+    sys.path.append(os.getcwd())
+
     import numpy as np
     from matplotlib import pyplot
-    from src import integrate, projection_method, ip_op
+    from src import projection_method
 
     ##variable declarations
-    nx = 256
-    ny = 128
-    lx = 20
-    ly = 12
+    nx = 512
+    ny = 512
+    lx = 8
+    ly = 8
     dx = lx / (nx - 1)
     dy = ly / (ny - 1)
     x = np.linspace(0, lx, nx)
     y = np.linspace(0, ly, ny)
     xx, yy = np.meshgrid(x, y)
     #nt = 220000
-    nt = 3000
-    saveth_iter = 300
+    nt = 100000
+    saveth_iter = 500
     save_start = 1
 
     ##physical variables
+    Re = 100
     rho = 1
-    nu = 1 / 150
-    F = 0.002
-    dt = .0015
+    R = 0.15
+    nu = rho * 1 * R * 2 / Re
+    F = 0
+    dt = 1.8e-3
 
     # boundary conditions
-    bc = {'x': 'periodic', 'y': 'free-slip'}
+    bc = {'x': 'neumann', 'y': 'free-slip'}
 
     # initial conditions
     u = np.ones((ny, nx))
@@ -54,8 +62,6 @@ def PyDNS():
     r = ((xx - lx / 4) ** 2 + (yy - ly / 2) ** 2) ** 0.5
     theta = np.arctan2(yy - ly / 2, xx - lx / 4)
 
-    R = 0.5
-
     for i in range(nx):
         for j in range(ny):
             if r[j, i] <= R:
@@ -71,33 +77,16 @@ def PyDNS():
     KX, KY = np.meshgrid(kx, ky)
     K = KX ** 2 + KY ** 2
 
-    ip_op.write_szl_2D(xx, yy, p, u, v, 0, 0)
-
-    ## rk3
-
-    for stepcount in range(1, 3):
-        u, v, dpdx, dpdy, uRHS_conv_diff, vRHS_conv_diff = integrate.rk3(u, v, nx, ny, nu, dx, dy, dt, dpdx, dpdy,
-                                                                         epsilon, F, theta, r, R,
-                                                                         rho, stepcount, saveth_iter, x, y, xx, yy,
-                                                                         nx_sp, ny_sp, K, bc)
-
+    for stepcount in range(0, nt + 1):
         print("Step=%06i time=%4.6f" % (stepcount, stepcount * dt))
 
         if (np.mod(stepcount, saveth_iter) == 0) and (stepcount > save_start):
             print("snapshot= %i" % (stepcount / saveth_iter))
-            ip_op.write_szl_2D(xx, yy, p, u, v, stepcount * dt, int(stepcount / saveth_iter))
-
-        ip_mdot = dy * ((u[0, 0] + u[-1, 0]) / 2 + sum(u[1:-1, 0]))
-        op_mdot = dy * ((u[0, -1] + u[-1, -1]) / 2 + sum(u[1:-1, -1]))
-        print("mass flow rate ip op diff: %f %f %e" % (ip_mdot, op_mdot, op_mdot-ip_mdot))
-
-        uRHS_conv_diff_pp = uRHS_conv_diff_p.copy()
-        vRHS_conv_diff_pp = vRHS_conv_diff_p.copy()
-
-        uRHS_conv_diff_p = uRHS_conv_diff.copy()
-        vRHS_conv_diff_p = vRHS_conv_diff.copy()
-
-    for stepcount in range(3, nt + 1):
+            time = stepcount * dt
+            index = int(stepcount / saveth_iter)
+            np.savetxt("./data/p_t=%.4f_%d.csv" % (time, index), np.asarray(p), delimiter=",")
+            np.savetxt("./data/u_t=%.4f_%d.csv" % (time, index), np.asarray(u), delimiter=",")
+            np.savetxt("./data/v_t=%.4f_%d.csv" % (time, index), np.asarray(v), delimiter=",")
 
         ustar, vstar, uRHS_conv_diff, vRHS_conv_diff = projection_method.step1(u, v, nx, ny, nu, x, y, xx, yy, dx, dy,
                                                                                dt, epsilon, F, R, theta, r,
@@ -120,12 +109,6 @@ def PyDNS():
             v[0, :] = 0
             v[-1, :] = 0
 
-        print("Step=%06i time=%4.6f" % (stepcount, stepcount * dt))
-
-        if (np.mod(stepcount, saveth_iter) == 0) and (stepcount > save_start):
-            print("snapshot= %i" % (stepcount / saveth_iter))
-            ip_op.write_szl_2D(xx, yy, p, u, v, stepcount * dt, int(stepcount / saveth_iter))
-
         ip_mdot = dy * ((u[0, 0] + u[-1, 0]) / 2 + sum(u[1:-1, 0]))
         op_mdot = dy * ((u[0, -1] + u[-1, -1]) / 2 + sum(u[1:-1, -1]))
         print("mass flow rate ip op diff: %f %f %e" % (ip_mdot, op_mdot, op_mdot-ip_mdot))
@@ -137,38 +120,8 @@ def PyDNS():
         uRHS_conv_diff_p = uRHS_conv_diff.copy()
         vRHS_conv_diff_p = vRHS_conv_diff.copy()
 
-        '''
-        fig = pyplot.figure(figsize=(11, 7), dpi=100)
-        pyplot.quiver(xx[::3, ::3], yy[::3, ::3], u[::3, ::3], v[::3, ::3])
-        
-        fig = pyplot.figure(figsize=(11, 7), dpi=100)
-        pyplot.quiver(xx, yy, u, v)
-        
-        pyplot.show()
-        '''
-
-
 if __name__ == "__main__":
     import os
-    import sys
-    from pathlib import Path
-    from urllib import request
-
-    # To download tecio library module
-    lib_folder = Path("tecio")
-    if os.name == 'nt':
-        dll_path = lib_folder / 'libtecio.dll'
-        if not dll_path.is_file():
-            url = 'https://raw.githubusercontent.com/blacksong/pytecio/master/2017r3_tecio.dll'
-            print('Downloading dll from github:', url)
-            request.urlretrieve(url, dll_path)
-
-    else:
-        dll_path = lib_folder / 'libtecio.so'
-        if not dll_path.is_file():
-            url = 'https://raw.githubusercontent.com/blacksong/pytecio/master/2017r2_tecio.so'
-            print('Downloading dll from github:', url)
-            request.urlretrieve(url, dll_path)
 
     if not os.path.exists('data'):
         os.makedirs('data')
