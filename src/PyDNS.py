@@ -24,10 +24,14 @@ def PyDNS():
     saveth_iter = 500
     save_start = 1
 
+    ##cylinder
+    R = 0.15
+    cx = 1.85
+    cy = 4
+
     ##physical variables
     Re = 100
     rho = 1
-    R = 0.15
     nu = rho * 1 * R * 2 / Re
     F = 0
     dt = 1.8e-3
@@ -59,8 +63,8 @@ def PyDNS():
     vRHS_conv_diff_pp = np.zeros((ny, nx))
 
     # ibm
-    r = ((xx - lx / 4) ** 2 + (yy - ly / 2) ** 2) ** 0.5
-    theta = np.arctan2(yy - ly / 2, xx - lx / 4)
+    r = ((xx - cx) ** 2 + (yy - cy) ** 2) ** 0.5
+    theta = np.arctan2(yy - cy, xx - cx)
 
     for i in range(nx):
         for j in range(ny):
