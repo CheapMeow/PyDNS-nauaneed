@@ -9,7 +9,7 @@ def PyDNS():
     from matplotlib import pyplot
     from src import projection_method
 
-    ##variable declarations
+    # variable declarations
     nx = 512
     ny = 512
     lx = 8
@@ -19,17 +19,17 @@ def PyDNS():
     x = np.linspace(0, lx, nx)
     y = np.linspace(0, ly, ny)
     xx, yy = np.meshgrid(x, y)
-    #nt = 220000
+    # nt = 220000
     nt = 100000
     saveth_iter = 500
     save_start = 1
 
-    ##cylinder
+    # cylinder
     R = 0.15
     cx = 1.85
     cy = 4
 
-    ##physical variables
+    # physical variables
     Re = 100
     rho = 1
     nu = rho * 1 * R * 2 / Re
@@ -71,7 +71,7 @@ def PyDNS():
             if r[j, i] <= R:
                 epsilon[j, i] = 1
 
-    ## pressure_poisson
+    # pressure_poisson
     nx_sp = nx
     ny_sp = ny
 
@@ -80,6 +80,12 @@ def PyDNS():
     ky = np.array([(np.pi * (i + 1) / ly) for i in range(0, ny_sp)])
     KX, KY = np.meshgrid(kx, ky)
     K = KX ** 2 + KY ** 2
+
+    # random disturb
+    # for i in range(nx):
+    #     for j in range(ny):
+    #         u[i, j] = np.random.rand(1) - 0.5
+    #         v[i, j] = np.random.rand(1) - 0.5
 
     for stepcount in range(0, nt + 1):
         print("Step=%06i time=%4.6f" % (stepcount, stepcount * dt))

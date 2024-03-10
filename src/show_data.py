@@ -33,8 +33,8 @@ dt = 1.8e-3
 # boundary conditions
 bc = {'x': 'neumann', 'y': 'free-slip'}
 
-time = 4.5
-index = 10
+time = 30.6
+index = 34
 
 p = np.genfromtxt("./data/p_t=%.4f_%d.csv" % (time, index), delimiter=",")
 u = np.genfromtxt("./data/u_t=%.4f_%d.csv" % (time, index), delimiter=",")
